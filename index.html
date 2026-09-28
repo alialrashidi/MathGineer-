@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MathGineer</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#0f2942;--navy2:#173a5e;--orange:#f5821f;--gray:#6b7280;--bg:#f7f8fa;--card:#fff;--border:#e5e7eb;--green:#16a34a;--yellow:#d97706;--red:#dc2626;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:#1f2937;font-family:-apple-system,Segoe UI,Tahoma,Arial,sans-serif}
+header{background:var(--navy);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;padding-top:calc(14px + env(safe-area-inset-top,0px))}
+header h1{margin:0;font-size:18px}
+header p{margin:2px 0 0;font-size:12px;color:#cbd5e1}
+.badge{position:absolute;left:14px;top:14px;font-size:11px;background:var(--orange);padding:3px 8px;border-radius:10px}
+header{position:relative}
+nav{display:flex;overflow-x:auto;background:var(--navy2);position:sticky;top:56px;z-index:9}
+nav button{flex:0 0 auto;background:none;border:none;color:#e2e8f0;padding:10px 14px;font-size:13px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+nav button.active{color:#fff;border-bottom-color:var(--orange);font-weight:600}
+main{padding:14px;max-width:900px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:700px){.cards{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px}
+.card .num{font-size:22px;font-weight:700;color:var(--navy)}
+.card .lbl{font-size:12px;color:var(--gray)}
+.section-title{font-size:15px;font-weight:700;color:var(--navy);margin:18px 0 8px}
+.row{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-left:6px}
+.g{background:var(--green)}.y{background:var(--yellow)}.r{background:var(--red)}
+.btn{background:var(--orange);color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;cursor:pointer}
+.btn.sec{background:var(--navy)}.btn.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy)}.btn.wa{background:#25D366}
+.fab{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:16px;background:var(--orange);color:#fff;border:none;border-radius:30px;padding:14px 20px;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer;z-index:20}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px;background:#fff;color:#1f2937}
+label{font-size:12px;color:var(--gray);display:block;margin-bottom:2px}
+.modal-bg{position:fixed;inset:0;background:rgba(15,41,66,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.modal{background:#fff;border-radius:16px 16px 0 0;padding:16px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto}
+.modal h3{margin:0 0 10px;color:var(--navy)}
+.pbar{background:#e5e7eb;border-radius:6px;height:12px;overflow:hidden;margin:6px 0}
+.pfill{background:var(--orange);height:100%}
+.pill{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px;text-align:right;border-bottom:1px solid var(--border)}
+.searchbar{display:flex;gap:8px;margin-bottom:10px}
+.daytabs{display:flex;overflow-x:auto;gap:6px;margin-bottom:12px}
+.daytabs button{flex:0 0 auto;border:1px solid var(--border);background:#fff;border-radius:16px;padding:8px 14px;font-size:13px;cursor:pointer}
+.daytabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.hidden{display:none}
+.muted{color:var(--gray);font-size:12px}
+.center-screen{min-height:70vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:24px}
+.parent-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px}
+.parent-card h2{margin:0;color:var(--navy)}
+.big-num{font-size:34px;font-weight:800;color:var(--navy)}
+</style>
+</head>
+<body>
+<div id="app"><div class="center-screen"><p class="muted">Loading...</p></div></div>
+<script>
+/* ====== CONFIG — safe to expose (this is the publishable/anon key) ====== */
+const SUPABASE_URL = 'https://nmtotuxaudpehwiqvlxp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_F33vsNz-LJ1mNyF1tokmfw_uwXg-5zL';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DAY_ORDER = [6,0,1,2,3,4,5];
+const DAY_LABEL = {0:'الأحد',1:'الإثنين',2:'الثلاثاء',3:'الأربعاء',4:'الخميس',5:'الجمعة',6:'السبت'};
+
+function fillTpl(tpl, map){ return (tpl||'').replace(/{{\s*(\w+)\s*}}/g, (m,k)=> (map[k]!==undefined&&map[k]!==null) ? map[k] : ''); }
+function waLink(phone, text){ return 'https://wa.me/'+(phone||'').replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(text); }
+function numOrNull(id){ const v=parseFloat(document.getElementById(id).value); return isNaN(v)?null:v; }
+function fmtTime(t){ if(!t) return '-'; return t.slice(0,5); }
+
+/* ---------------- ROUTER ---------------- */
+window.addEventListener('hashchange', route);
+window.addEventListener('DOMContentLoaded', route);
+async function route(){
+  const h = location.hash;
+  if(h.startsWith('#/parent/')){
+    const token = h.replace('#/parent/','');
+    renderParentApp(token);
+  } else {
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session){ await sb.rpc('claim_teacher_account'); renderTeacherApp(); }
+    else renderLogin();
+  }
+}
+route();
+
+/* ================= LOGIN ================= */
+function renderLogin(){
+  document.getElementById('app').innerHTML = `
+  <div class="center-screen">
+    <h1 style="color:var(--navy)">MathGineer</h1>
+    <p class="muted">Teacher Login</p>
+    <div style="width:100%;max-width:320px">
+      <label>Email</label><input id="lg_email" type="email">
+      <label>Password</label><input id="lg_pass" type="password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="btn" style="width:100%" onclick="doLogin()">Login</button>
+      <p id="lg_err" class="muted" style="color:var(--red)"></p>
+    </div>
+  </div>`;
+}
+async function doLogin(){
+  const email = document.getElementById('lg_email').value;
+  const password = document.getElementById('lg_pass').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ document.getElementById('lg_err').innerText = error.message; return; }
+  await sb.rpc('claim_teacher_account');
+  renderTeacherApp();
+}
+async function doLogout(){ await sb.auth.signOut(); renderLogin(); }
+
+/* ================= PARENT MODE ================= */
+let parentTab='Home', parentToken=null;
+async function renderParentApp(token){
+  parentToken = token;
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="center-screen"><p class="muted">Loading...</p></div>`;
+  const { data: home, error } = await sb.rpc('parent_get_home', { p_token: token });
+  if(error || !home){
+    app.innerHTML = `<div class="center-screen"><h2 style="color:var(--navy)">🔒 Access Denied</h2>
+      <p class="muted">هذا الرابط غير صحيح أو منتهي.</p></div>`;
+    return;
+  }
+  const tabs=['Home','Progress','Lessons'];
+  app.innerHTML = `
+  <header><h1>MathGineer | ماث جينير</h1><p>الرياضيات بعقلية مهندس</p></header>
+  <nav>${tabs.map(t=>`<button class="${parentTab===t?'active':''}" onclick="parentTab='${t}';renderParentApp('${token}')">${t}</button>`).join('')}</nav>
+  <main id="pmain"></main>`;
+  const m = document.getElementById('pmain');
+  const remaining = home.remaining_sessions;
+  let msg;
+  if(remaining>2) msg=`Your package is active. You have ${remaining} sessions remaining.`;
+  else if(remaining===2) msg='Your package has 2 sessions remaining. Renewal is recommended soon.';
+  else if(remaining===1) msg='Your package has 1 session remaining. Please contact MathGineer regarding renewal.';
+  else msg='Your package is complete. Please contact MathGineer to renew.';
+
+  if(parentTab==='Home'){
+    m.innerHTML = `
+    <div class="parent-card">
+      <h2>${home.name}</h2>
+      <p class="muted">${home.grade||''} — ${home.curriculum||''} Curriculum</p>
+      <div class="section-title" style="justify-content:center">Current Package</div>
+      <div class="big-num">${home.total_sessions} Sessions</div>
+      <p>🟦 ${home.completed_sessions} Completed &nbsp; 🟩 ${Math.max(remaining,0)} Remaining</p>
+    </div>
+    <div class="parent-card">
+      <div class="section-title" style="justify-content:center">Package Progress</div>
+      <div class="pbar"><div class="pfill" style="width:${home.usage_percentage}%"></div></div>
+      <p>${home.completed_sessions} / ${home.total_sessions}</p>
+      <p style="color:var(--navy);font-weight:600">${msg}</p>
+    </div>`;
+  } else if(parentTab==='Progress'){
+    m.innerHTML = `<div class="section-title">Package</div>
+    <div class="row"><div>${home.package_name}<br><span class="muted">${home.start_date} → ${home.expiry_date}</span></div></div>`;
+  } else if(parentTab==='Lessons'){
+    const { data: sessions } = await sb.rpc('parent_get_sessions', { p_token: token });
+    const rows = (sessions||[]).map(s=>`
+      <div class="row" style="flex-direction:column;align-items:flex-start">
+        <b>${s.session_date} — Lesson ${s.lesson_number}</b>
+        <span>${s.topic||''}</span>
+        ${s.homework?`<span class="muted">HW: ${s.homework}</span>`:''}
+        ${s.progress_note?`<span class="muted">${s.progress_note}</span>`:''}
+      </div>`).join('');
+    m.innerHTML = `<div class="section-title">Recent Lessons</div>${rows || '<p class="muted">لا توجد حصص بعد.</p>'}`;
+  }
+}
+
+/* ================= TEACHER MODE ================= */
+let teacherTab='Dashboard', scheduleDay=DAY_ORDER[0], searchQ='', cache={students:null,plans:null,templates:null,settings:null};
+
+async function renderTeacherApp(){
+  const TABS=['Dashboard','Schedule','Students','Packages','Settings'];
+  const app=document.getElementById('app');
+  app.innerHTML=`
+  <header><h1>MathGineer | ماث جينير <span class="badge">TEACHER</span></h1><p>الرياضيات بعقلية مهندس</p></header>
+  <nav>${TABS.map(t=>`<button class="${teacherTab===t?'active':''}" onclick="teacherTab='${t}';renderTeacherApp()">${t}</button>`).join('')}</nav>
+  <main id="tmain"><p class="muted">Loading...</p></main>
+  <button class="fab" onclick="openAddSessionPicker()">+ Add Session</button>`;
+  const m=document.getElementById('tmain');
+  try{
+    if(teacherTab==='Dashboard') m.innerHTML = await renderDashboard();
+    else if(teacherTab==='Schedule') m.innerHTML = await renderSchedule();
+    else if(teacherTab==='Students') m.innerHTML = await renderStudents();
+    else if(teacherTab==='Packages') m.innerHTML = await renderPackages();
+    else if(teacherTab==='Settings') m.innerHTML = await renderSettings();
+    else if(teacherTab.startsWith('Profile:')) m.innerHTML = await renderProfile(teacherTab.split(':')[1]);
+  }catch(e){ m.innerHTML = `<p class="muted" style="color:var(--red)">Error: ${e.message}</p>`; }
+}
+
+async function getStudents(force){
+  if(!cache.students || force){
+    const { data, error } = await sb.rpc('teacher_list_students');
+    if(error) throw error;
+    cache.students = data;
+  }
+  return cache.students;
+}
+async function getPlans(force){
+  if(!cache.plans || force){ const {data,error}=await sb.rpc('teacher_list_package_plans'); if(error) throw error; cache.plans=data; }
+  return cache.plans;
+}
+async function getTemplates(force){
+  if(!cache.templates || force){ const {data,error}=await sb.rpc('teacher_list_templates'); if(error) throw error; cache.templates=data; }
+  return cache.templates;
+}
+function tpl(type){ return (cache.templates||[]).find(t=>t.type===type)?.template || ''; }
+
+async function renderDashboard(){
+  const [{data:dash,error:e1}, students] = await Promise.all([sb.rpc('teacher_dashboard'), getStudents()]);
+  if(e1) throw e1;
+  const alerts = students.filter(s=>s.remaining_sessions<=2).sort((a,b)=>a.remaining_sessions-b.remaining_sessions);
+  return `
+  <div style="text-align:left"><button class="btn ghost" onclick="doLogout()">Logout</button></div>
+  <div class="cards">
+    <div class="card"><div class="num">${dash.active_students}</div><div class="lbl">Active Students</div></div>
+    <div class="card"><div class="num">${dash.remaining_sessions}</div><div class="lbl">Sessions Remaining</div></div>
+    <div class="card"><div class="num">${dash.low_remaining}</div><div class="lbl">≤2 Sessions Left</div></div>
+    <div class="card"><div class="num">${dash.finished}</div><div class="lbl">Package Finished</div></div>
+    <div class="card"><div class="num">${dash.payments_pending}</div><div class="lbl">Payments Pending</div></div>
+    <div class="card"><div class="num">${dash.total_students}</div><div class="lbl">Total Students</div></div>
+  </div>
+  <div class="section-title">Renewal Alerts</div>
+  ${alerts.length===0?'<p class="muted">لا توجد تنبيهات حاليًا.</p>':alerts.map(x=>`
+    <div class="row">
+      <div><span class="dot ${x.remaining_sessions<=0?'r':'y'}"></span><b>${x.name}</b> <span class="muted">(${x.student_code})</span><br>
+      <span class="muted">${x.total_sessions} sessions • متبقي ${Math.max(x.remaining_sessions,0)} • ${x.remaining_sessions<=0?'🔴 Package Finished':'🟡 Renewal Soon'}</span></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn ghost" onclick="teacherTab='Profile:${x.student_id}';renderTeacherApp()">View</button>
+        <button class="btn sec" onclick="openRenew('${x.student_id}')">Renew</button>
+      </div>
+    </div>`).join('')}
+  `;
+}
+
+async function renderSchedule(){
+  const { data: sched, error } = await sb.rpc('teacher_list_schedule');
+  if(error) throw error;
+  window.lastSched = sched;
+  const rows = sched.filter(s=>s.day_of_week===scheduleDay).sort((a,b)=>(a.start_time||'').localeCompare(b.start_time||''));
+  return `
+  <div class="daytabs">${DAY_ORDER.map(d=>`<button class="${scheduleDay===d?'on':''}" onclick="scheduleDay=${d};renderTeacherApp()">${DAY_LABEL[d]}</button>`).join('')}</div>
+  <div class="section-title">${DAY_LABEL[scheduleDay]}</div>
+  ${rows.length===0?'<p class="muted">لا توجد حصص في هذا اليوم.</p>':rows.map(r=>`
+    <div class="row" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <b>${fmtTime(r.start_time)}</b>
+        <span class="dot g"></span>
+      </div>
+      <div>${r.student_name} <span class="muted">• متبقي ${Math.max(r.remaining_sessions||0,0)}</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${r.default_lesson_link?`<button class="btn sec" onclick="window.open('${r.default_lesson_link}','_blank')">Join Lesson</button>`:''}
+        <button class="btn wa" onclick="sendReminder('${r.student_id}','${r.student_name}','${fmtTime(r.start_time)}','${DAY_LABEL[r.day_of_week]}','${(r.default_lesson_link||'').replace(/'/g,"\\'")}','${r.student_whatsapp||''}')">Reminder</button>
+        <button class="btn" onclick="openAddSession('${r.student_id}')">Complete</button>
+        <button class="btn ghost" onclick="teacherTab='Profile:${r.student_id}';renderTeacherApp()">Student</button>
+        <button class="btn ghost" onclick="openEditSchedule('${r.schedule_id}')">Edit</button>
+        <button class="btn ghost" style="color:#dc2626;border-color:#dc2626" onclick="deleteSchedule('${r.schedule_id}')">Delete</button>
+      </div>
+    </div>`).join('')}
+  <div class="section-title">Add Weekly Slot</div>
+  <button class="btn ghost" onclick="openAddSchedule()">+ Add Schedule Slot</button>
+  `;
+}
+function sendReminder(id,name,time,day,link,phone){
+  const t = tpl('lesson_reminder');
+  const text = fillTpl(t, {student_name:name, time, day, lesson_link: link||''});
+  window.open(waLink(phone, text), '_blank');
+}
+
+async function renderStudents(){
+  const students = await getStudents();
+  const list = students.filter(x=>x.name.includes(searchQ)||x.student_code.includes(searchQ));
+  return `
+  <div class="searchbar">
+    <input placeholder="بحث بالاسم..." value="${searchQ}" oninput="searchQ=this.value;renderTeacherApp()">
+    <button class="btn" onclick="openAddStudent()">+ Student</button>
+  </div>
+  ${list.map(x=>`
+    <div class="row" style="align-items:flex-start;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;width:100%">
+        <div><span class="dot ${x.remaining_sessions<=0?'r':x.remaining_sessions<=2?'y':'g'}"></span><b>${x.name}</b> <span class="muted">${x.student_code} • ${x.grade||''}</span></div>
+        <span class="pill" style="background:${x.payment_status==='paid'?'#16a34a':x.payment_status==='partial'?'#d97706':'#dc2626'}">${x.payment_status||'-'}</span>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${x.total_sessions?Math.round(100*x.completed_sessions/x.total_sessions):0}%"></div></div>
+      <div class="muted">${x.completed_sessions||0}/${x.total_sessions||0} completed • متبقي ${Math.max(x.remaining_sessions||0,0)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn ghost" onclick="teacherTab='Profile:${x.student_id}';renderTeacherApp()">Profile</button>
+        <button class="btn sec" onclick="openAddSession('${x.student_id}')">Add Session</button>
+        <button class="btn wa" onclick="sendPackageUpdate('${x.student_id}')">Send Update</button>
+        <button class="btn ghost" onclick="copyParentLink('${x.student_id}')">🔗 Parent Link</button>
+        ${x.remaining_sessions<=2?`<button class="btn" onclick="openRenew('${x.student_id}')">Renew</button>`:''}
+      </div>
+    </div>`).join('')}
+  `;
+}
+async function sendPackageUpdate(id){
+  const students = await getStudents();
+  const x = students.find(s=>s.student_id===id);
+  const t = tpl('package_update');
+  const text = fillTpl(t, {parent_name:x.parent_name||'', student_name:x.name, total_sessions:x.total_sessions,
+    completed_sessions:x.completed_sessions, remaining_sessions:Math.max(x.remaining_sessions,0), next_lesson:''});
+  window.open(waLink(x.parent_whatsapp||x.student_whatsapp, text), '_blank');
+}
+async function copyParentLink(id){
+  const { data: token, error } = await sb.rpc('teacher_create_parent_link', { p_student_id: id });
+  if(error){ alert(error.message); return; }
+  const link = location.origin+location.pathname+'#/parent/'+token;
+  navigator.clipboard && navigator.clipboard.writeText(link).catch(()=>{});
+  alert('تم نسخ الرابط:\n'+link);
+}
+
+async function renderProfile(id){
+  const { data, error } = await sb.rpc('teacher_get_student', { p_student_id: id });
+  if(error) return `<p class="muted">${error.message}</p>`;
+  const s = data.student, packages = data.packages||[], sessions = data.sessions||[];
+  const rows = sessions.map(se=>`
+    <tr><td>${se.session_date}</td><td>${se.lesson_number||''}</td><td>${se.status}</td><td>${se.topic||''}</td>
+    <td>${se.whatsapp_report_text?`<button class="btn wa" style="padding:4px 8px;font-size:11px" onclick='sendSessionReport(${JSON.stringify(se.whatsapp_report_text)}, "${s.student_whatsapp||''}")'>WA</button>`:''}</td></tr>`).join('');
+  const hist = packages.map((p,i)=>`<div class="row"><div>Package #${p.package_number} — ${p.total_sessions} sessions<br>
+    <span class="muted">${p.start_date} → ${p.expiry_date} • ${p.completed_sessions}/${p.total_sessions} completed ${p.price>0?'• '+p.price+' ':''}• ${p.status} • Payment: ${p.payment_status}</span></div></div>`).join('');
+  const cp = packages[packages.length-1] || {total_sessions:0,completed_sessions:0};
+  const remaining = cp.total_sessions - cp.completed_sessions;
+  return `
+  <button class="btn ghost" onclick="teacherTab='Students';renderTeacherApp()">← Back</button>
+  <div class="section-title">${s.name} <span class="muted">(${s.student_code})</span></div>
+  <div class="card">
+    <div class="pbar"><div class="pfill" style="width:${cp.total_sessions?Math.round(100*cp.completed_sessions/cp.total_sessions):0}%"></div></div>
+    <div>${cp.completed_sessions||0} / ${cp.total_sessions||0} sessions completed — متبقي ${Math.max(remaining||0,0)}</div>
+    <div class="muted">Parent: ${s.parent_name||'-'} • Parent WA: ${s.parent_whatsapp||'-'} • Student WA: ${s.student_whatsapp||'-'}</div>
+    <div class="muted">Platform: ${s.lesson_platform||'-'} • Link: ${s.default_lesson_link||'-'}</div>
+    ${s.whatsapp_group_link?`<button class="btn ghost" onclick="window.open('${s.whatsapp_group_link}','_blank')">Open WhatsApp Group</button>`:''}
+    ${s.notes?`<div class="muted">Teacher Notes: ${s.notes}</div>`:''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn sec" onclick="openAddSession('${s.id}')">Add Session</button>
+      <button class="btn ghost" onclick="copyParentLink('${s.id}')">🔗 Copy Parent Link</button>
+      <button class="btn ghost" onclick="openEditStudent('${s.id}')">Edit</button>
+    </div>
+  </div>
+  <div class="section-title">Package History</div>${hist}
+  <div class="section-title">Session History</div>
+  <div style="overflow-x:auto"><table><tr><th>Date</th><th>#</th><th>Status</th><th>Topic</th><th></th></tr>${rows}</table></div>
+  `;
+}
+function sendSessionReport(text, phone){ window.open(waLink(phone, text), '_blank'); }
+
+async function renderPackages(){
+  const plans = await getPlans();
+  return `<div class="section-title">Package Plans</div>
+  ${plans.map(p=>`<div class="row"><div>${p.name}</div><div class="muted">${p.sessions_count} sessions • ${p.validity_days} days</div></div>`).join('')}
+  <p class="muted">السعر بيتحدد لكل طالب عند إضافته أو تجديد باقته.</p>`;
+}
+
+async function renderSettings(){
+  const [{data:settings,error:e1}, templates] = await Promise.all([sb.rpc('teacher_get_settings'), getTemplates()]);
+  if(e1) throw e1;
+  return `
+  <div class="section-title">Settings</div>
+  <label>Teacher Name</label><input id="set_teacher" value="${settings.teacher_name}">
+  <label>Brand Name</label><input id="set_brand" value="${settings.brand_name}">
+  <label>Currency</label><input id="set_currency" value="${settings.currency}">
+  <label>Renewal Alert Threshold</label><input id="set_alert" type="number" value="${settings.renewal_threshold}">
+  <button class="btn" onclick="saveSettings()">Save Settings</button>
+  <div class="section-title">Message Templates</div>
+  ${templates.map(t=>`
+    <label>${t.type}</label>
+    <textarea id="tplbox_${t.type}" rows="5">${t.template}</textarea>
+    <button class="btn ghost" onclick="saveTemplate('${t.type}')" style="margin-bottom:14px">Save Template</button>
+  `).join('')}
+  `;
+}
+async function saveSettings(){
+  const { error } = await sb.rpc('teacher_update_settings', {
+    p_brand_name: document.getElementById('set_brand').value,
+    p_teacher_name: document.getElementById('set_teacher').value,
+    p_currency: document.getElementById('set_currency').value,
+    p_renewal_threshold: parseInt(document.getElementById('set_alert').value)||2
+  });
+  if(error){ alert(error.message); return; }
+  alert('تم الحفظ');
+}
+async function saveTemplate(type){
+  const { error } = await sb.rpc('teacher_update_template', { p_type: type, p_template: document.getElementById('tplbox_'+type).value });
+  if(error){ alert(error.message); return; }
+  await getTemplates(true); alert('تم الحفظ');
+}
+
+/* ---- modals ---- */
+function modal(html){
+  const bg=document.createElement('div'); bg.className='modal-bg'; bg.id='modalBg';
+  bg.innerHTML=`<div class="modal">${html}</div>`;
+  bg.onclick=(e)=>{ if(e.target.id==='modalBg') closeModal(); };
+  document.body.appendChild(bg);
+}
+function closeModal(){ const m=document.getElementById('modalBg'); if(m) m.remove(); }
+
+async function openAddStudent(){
+  const plans = await getPlans();
+  const opts = plans.map(p=>`<option value="${p.id}">${p.sessions_count} sessions</option>`).join('');
+  modal(`
+    <h3>Add Student</h3>
+    <label>Student Code</label><input id="ns_code" placeholder="MG004">
+    <label>Name</label><input id="ns_name">
+    <label>Grade</label><input id="ns_grade">
+    <label>Curriculum</label><input id="ns_curr" value="Saudi">
+    <label>Student WhatsApp</label><input id="ns_swa" placeholder="9665xxxxxxxx">
+    <label>Parent Name</label><input id="ns_pname">
+    <label>Parent WhatsApp</label><input id="ns_pwa" placeholder="9665xxxxxxxx">
+    <label>WhatsApp Group Link</label><input id="ns_group">
+    <label>Lesson Platform</label><select id="ns_platform"><option value="google_meet">Google Meet</option><option value="zoom">Zoom</option><option value="teams">Teams</option><option value="other">Other</option></select>
+    <label>Lesson Link</label><input id="ns_link">
+    <label>Package</label><select id="ns_pkg">${opts}</select>
+    <label>Price (اختياري)</label><input id="ns_price" type="number" placeholder="سعر الباقة لهذا الطالب">
+    <label>Start Date</label><input id="ns_start" type="date" value="${new Date().toISOString().slice(0,10)}">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="saveNewStudent()">Save</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+async function saveNewStudent(){
+  const { error } = await sb.rpc('teacher_add_student', {
+    p_student_code: document.getElementById('ns_code').value,
+    p_name: document.getElementById('ns_name').value,
+    p_grade: document.getElementById('ns_grade').value,
+    p_curriculum: document.getElementById('ns_curr').value,
+    p_student_whatsapp: document.getElementById('ns_swa').value,
+    p_parent_name: document.getElementById('ns_pname').value,
+    p_parent_whatsapp: document.getElementById('ns_pwa').value,
+    p_whatsapp_group_link: document.getElementById('ns_group').value,
+    p_lesson_platform: document.getElementById('ns_platform').value,
+    p_default_lesson_link: document.getElementById('ns_link').value,
+    p_plan_id: document.getElementById('ns_pkg').value,
+    p_start: document.getElementById('ns_start').value,
+    p_price: numOrNull('ns_price')
+  });
+  if(error){ alert(error.message); return; }
+  await getStudents(true); closeModal(); teacherTab='Students'; renderTeacherApp();
+}
+
+async function openEditStudent(id){
+  const { data } = await sb.rpc('teacher_get_student', { p_student_id: id });
+  const s = data.student;
+  modal(`
+    <h3>Edit Student — ${s.name}</h3>
+    <label>Name</label><input id="es_name" value="${s.name}">
+    <label>Grade</label><input id="es_grade" value="${s.grade||''}">
+    <label>Curriculum</label><input id="es_curr" value="${s.curriculum||''}">
+    <label>Status</label><select id="es_status"><option ${s.status==='active'?'selected':''}>active</option><option ${s.status==='paused'?'selected':''}>paused</option><option ${s.status==='finished'?'selected':''}>finished</option></select>
+    <label>Student WhatsApp</label><input id="es_swa" value="${s.student_whatsapp||''}">
+    <label>Parent Name</label><input id="es_pname" value="${s.parent_name||''}">
+    <label>Parent WhatsApp</label><input id="es_pwa" value="${s.parent_whatsapp||''}">
+    <label>WhatsApp Group Link</label><input id="es_group" value="${s.whatsapp_group_link||''}">
+    <label>Lesson Platform</label><select id="es_platform">
+      <option value="google_meet" ${s.lesson_platform==='google_meet'?'selected':''}>Google Meet</option>
+      <option value="zoom" ${s.lesson_platform==='zoom'?'selected':''}>Zoom</option>
+      <option value="teams" ${s.lesson_platform==='teams'?'selected':''}>Teams</option>
+      <option value="other" ${s.lesson_platform==='other'?'selected':''}>Other</option></select>
+    <label>Lesson Link</label><input id="es_link" value="${s.default_lesson_link||''}">
+    <label>Teacher Notes (internal)</label><textarea id="es_notes" rows="2">${s.notes||''}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="saveEditStudent('${id}')">Save</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>
+    <button class="btn ghost" style="width:100%;margin-top:14px;color:#dc2626;border-color:#dc2626" onclick="deleteStudent('${id}')">Delete Student permanently</button>
+    <p class="muted">للإيقاف المؤقت بدون حذف البيانات: غيّر Status إلى paused أو finished.</p>`);
+}
+async function saveEditStudent(id){
+  const { error } = await sb.rpc('teacher_update_student', {
+    p_student_id: id,
+    p_name: document.getElementById('es_name').value,
+    p_grade: document.getElementById('es_grade').value,
+    p_curriculum: document.getElementById('es_curr').value,
+    p_status: document.getElementById('es_status').value,
+    p_student_whatsapp: document.getElementById('es_swa').value,
+    p_parent_name: document.getElementById('es_pname').value,
+    p_parent_whatsapp: document.getElementById('es_pwa').value,
+    p_whatsapp_group_link: document.getElementById('es_group').value,
+    p_lesson_platform: document.getElementById('es_platform').value,
+    p_default_lesson_link: document.getElementById('es_link').value,
+    p_notes: document.getElementById('es_notes').value
+  });
+  if(error){ alert(error.message); return; }
+  await getStudents(true); closeModal(); renderTeacherApp();
+}
+
+async function openAddSessionPicker(){
+  const students = await getStudents();
+  const opts = students.map(x=>`<option value="${x.student_id}">${x.name} (${x.student_code})</option>`).join('');
+  modal(`<h3>اختر الطالب</h3><select id="pick_student">${opts}</select>
+    <button class="btn" style="width:100%" onclick="const id=document.getElementById('pick_student').value;closeModal();openAddSession(id)">Next</button>`);
+}
+async function openAddSession(studentId){
+  const students = await getStudents();
+  const x = students.find(s=>s.student_id===studentId);
+  modal(`
+    <h3>Add Session — ${x.name}</h3>
+    <p class="muted">Remaining: ${Math.max(x.remaining_sessions,0)}</p>
+    <label>Date</label><input id="as_date" type="date" value="${new Date().toISOString().slice(0,10)}">
+    <label>Start Time</label><input id="as_time" type="time" value="19:00">
+    <label>Duration (minutes)</label><input id="as_dur" type="number" value="60">
+    <label>Status</label><select id="as_status"><option>completed</option><option>rescheduled</option><option>cancelled</option><option>no_show</option></select>
+    <label>Topic / Skills Covered</label><input id="as_topic">
+    <label>Homework</label><input id="as_hw">
+    <label>Student Progress (shown to parent)</label><textarea id="as_progress" rows="2"></textarea>
+    <label>Teacher Notes (internal only)</label><textarea id="as_notes" rows="2"></textarea>
+    <label>Next Lesson Date</label><input id="as_nld" type="date">
+    <label>Next Lesson Time</label><input id="as_nlt" type="time">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="saveSession('${studentId}')">Save Session</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+async function saveSession(studentId){
+  const status = document.getElementById('as_status').value;
+  const { data: sessionId, error } = await sb.rpc('teacher_add_session', {
+    p_student_id: studentId,
+    p_session_date: document.getElementById('as_date').value,
+    p_start_time: document.getElementById('as_time').value,
+    p_duration: parseInt(document.getElementById('as_dur').value)||60,
+    p_status: status,
+    p_topic: document.getElementById('as_topic').value,
+    p_homework: document.getElementById('as_hw').value,
+    p_student_progress: document.getElementById('as_progress').value,
+    p_teacher_notes: document.getElementById('as_notes').value,
+    p_next_lesson_date: document.getElementById('as_nld').value || null,
+    p_next_lesson_time: document.getElementById('as_nlt').value || null,
+    p_lesson_link_override: null
+  });
+  if(error){
+    if(error.message.includes('Package finished')){
+      closeModal();
+      if(confirm(error.message+'\nRenew now?')) openRenew(studentId);
+      return;
+    }
+    alert(error.message); return;
+  }
+  await getStudents(true);
+  closeModal();
+  if(status==='completed'){
+    const { data } = await sb.rpc('teacher_get_student', { p_student_id: studentId });
+    const se = (data.sessions||[]).find(s=>s.id===sessionId);
+    if(se && se.whatsapp_report_text){
+      if(confirm('تم حفظ الحصة. هل تريد إرسال التقرير عبر واتساب الآن؟')){
+        const x = (await getStudents()).find(s=>s.student_id===studentId);
+        window.open(waLink(x.parent_whatsapp||x.student_whatsapp, se.whatsapp_report_text), '_blank');
+      }
+    }
+  }
+  renderTeacherApp();
+}
+
+async function openRenew(studentId){
+  const plans = await getPlans();
+  const opts = plans.map(p=>`<option value="${p.id}">${p.sessions_count} sessions</option>`).join('');
+  modal(`
+    <h3>Renew Package</h3>
+    <label>New Package</label><select id="rn_pkg">${opts}</select>
+    <label>Price (اختياري)</label><input id="rn_price" type="number" placeholder="سعر الباقة لهذا الطالب">
+    <label>Start Date</label><input id="rn_start" type="date" value="${new Date().toISOString().slice(0,10)}">
+    <label>Payment</label><select id="rn_pay"><option>paid</option><option>partial</option><option>pending</option></select>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="saveRenew('${studentId}')">Renew</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+async function saveRenew(studentId){
+  const { error } = await sb.rpc('teacher_renew_package', {
+    p_student_id: studentId,
+    p_plan_id: document.getElementById('rn_pkg').value,
+    p_start: document.getElementById('rn_start').value,
+    p_payment_status: document.getElementById('rn_pay').value,
+    p_price: numOrNull('rn_price')
+  });
+  if(error){ alert(error.message); return; }
+  await getStudents(true); closeModal(); renderTeacherApp();
+}
+
+async function openAddSchedule(){
+  const students = await getStudents();
+  const opts = students.map(x=>`<option value="${x.student_id}">${x.name}</option>`).join('');
+  modal(`
+    <h3>Add Schedule Slot</h3>
+    <label>Student</label><select id="sc_student">${opts}</select>
+    <label>Day</label><select id="sc_day">${DAY_ORDER.map(d=>`<option value="${d}">${DAY_LABEL[d]}</option>`).join('')}</select>
+    <label>Start Time</label><input id="sc_start" type="time" value="19:00">
+    <label>End Time</label><input id="sc_end" type="time" value="20:00">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="saveSchedule()">Save</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+async function saveSchedule(){
+  const { error } = await sb.rpc('teacher_add_schedule', {
+    p_student_id: document.getElementById('sc_student').value,
+    p_day: parseInt(document.getElementById('sc_day').value),
+    p_start: document.getElementById('sc_start').value,
+    p_end: document.getElementById('sc_end').value
+  });
+  if(error){ alert(error.message); return; }
+  closeModal(); renderTeacherApp();
+}
+
+async function deleteStudent(id){
+  if(!confirm('حذف الطالب نهائيًا؟ سيتم حذف كل باقاته وحصصه ومدفوعاته وجدوله ولا يمكن التراجع.')) return;
+  if(!confirm('تأكيد أخير: حذف نهائي؟')) return;
+  const { error } = await sb.rpc('teacher_delete_student', { p_student_id: id });
+  if(error){ alert(error.message); return; }
+  await getStudents(true); closeModal(); teacherTab='Students'; renderTeacherApp();
+}
+function openEditSchedule(id){
+  const r = (window.lastSched||[]).find(x=>x.schedule_id===id);
+  if(!r) return;
+  modal(`
+    <h3>Edit Slot — ${r.student_name}</h3>
+    <label>Day</label><select id="se_day">${DAY_ORDER.map(d=>`<option value="${d}" ${d===r.day_of_week?'selected':''}>${DAY_LABEL[d]}</option>`).join('')}</select>
+    <label>Start Time</label><input id="se_start" type="time" value="${fmtTime(r.start_time)}">
+    <label>End Time</label><input id="se_end" type="time" value="${fmtTime(r.end_time)}">
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="saveEditSchedule('${id}')">Save</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+async function saveEditSchedule(id){
+  const day = parseInt(document.getElementById('se_day').value);
+  const { error } = await sb.rpc('teacher_update_schedule', {
+    p_schedule_id: id, p_day: day,
+    p_start: document.getElementById('se_start').value,
+    p_end: document.getElementById('se_end').value
+  });
+  if(error){ alert(error.message); return; }
+  scheduleDay = day; closeModal(); renderTeacherApp();
+}
+async function deleteSchedule(id){
+  if(!confirm('حذف هذه الحصة من الجدول؟')) return;
+  const { error } = await sb.rpc('teacher_delete_schedule', { p_schedule_id: id });
+  if(error){ alert(error.message); return; }
+  renderTeacherApp();
+}
+</script>
+</body>
+</html>
